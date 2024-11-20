@@ -9,6 +9,8 @@ export class NonPlayerCharacter {
   publicDescription: string;
   privateDescription: string;
   isStepBound: boolean;
+  maxHealthPoints: number;
+  currentHealthPoints: number;
 
   constructor() {
     this.id = new Date().getTime();
@@ -20,5 +22,7 @@ export class NonPlayerCharacter {
     this.publicDescription = '';
     this.privateDescription = '';
     this.isStepBound = true;
+    this.maxHealthPoints = 0;
+    this.currentHealthPoints = this.maxHealthPoints;
   }
 }

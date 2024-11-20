@@ -13,11 +13,15 @@ import StepTab from '@/app/game-master/adventure/[adventureSlug]/chapter/[id]/co
 import { MuiTabThemes } from '@/model/types/external-libs.type';
 import { TabHeader } from '@/app/game-master/adventure/[adventureSlug]/chapter/[id]/components/TabHeader';
 import { Audio } from '@/model/Audio.class';
+import { SessionTab } from '@/app/game-master/adventure/[adventureSlug]/chapter/[id]/components/SessionTab';
+import { StoryArc } from '@/model/adventure/story-arc/StoryArc.class';
+import './chapter.css';
 
 export default function ChapterDisplay({ params }: { params: { adventureSlug: string; id: string } }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [activeStep, setActiveStep] = useState<Step>();
   const [adventure, setAdventure] = useState<Adventure>();
+  const [storyArc, setStoryArc] = useState<StoryArc>();
   const [chapter, setChapter] = useState<Chapter>();
   const [audioPlaying, setAudioPlaying] = useState<Audio>();
   const onAudioRequested = useCallback((audio?: Audio) => {
@@ -40,10 +44,12 @@ export default function ChapterDisplay({ params }: { params: { adventureSlug: st
       let chapter: Chapter;
       if (activeStep) {
         // todo improve this (in params)
-        const storyArc = adventure.storyArcs.find((storyArc) =>
-          storyArc.chapters.find((thisChapter: Chapter) => {
-            return thisChapter.steps.find((thisStep) => thisStep.id === activeStep.id);
-          }),
+        setStoryArc(
+          adventure.storyArcs.find((storyArc) =>
+            storyArc.chapters.find((thisChapter: Chapter) => {
+              return thisChapter.steps.find((thisStep) => thisStep.id === activeStep.id);
+            }),
+          ),
         );
         if (!storyArc) {
           console.error("Pas d'arc trouvé pour ce châpitre");
@@ -59,6 +65,7 @@ export default function ChapterDisplay({ params }: { params: { adventureSlug: st
         if (!eligibleStoryArcs.length || eligibleStoryArcs.length > 1) {
           console.error("Pas d'arc trouvé pour ce châpitre");
         }
+        setStoryArc(eligibleStoryArcs[0]);
         eligibleChapters = (eligibleStoryArcs[0].chapters || []).filter((thisChapter: Chapter) => {
           return thisChapter.id === params.id;
         });
@@ -71,15 +78,6 @@ export default function ChapterDisplay({ params }: { params: { adventureSlug: st
       }
 
       setChapter(chapter);
-      // todo fix
-      /*if (chapter && chapter.nextChapterId) {
-        const nextChapter = adventure?.chapters?.filter((thisChapter: Chapter) => {
-          return thisChapter.id === chapter.nextChapterId;
-        })[0];
-        if (nextChapter) {
-          setNextChapter(nextChapter);
-        }
-      }*/
       setAdventure(adventure);
     })();
   }, [params, params.adventureSlug, params.id, activeStep, isLoggedIn]);
@@ -103,12 +101,19 @@ export default function ChapterDisplay({ params }: { params: { adventureSlug: st
     return eligibleStoryArcs[0].chapters;
   };
 
-  const tab1 = (
+  const stepTabContent = (
     <div className='flex h-full w-full'>
       <StepTab step={activeStep} referer='read' onAudioRequested={onAudioRequested} />
     </div>
   );
-  const tab2 = <div className='flex h-full w-full bg-orange-400'>Session</div>;
+
+  const sessionTabContent = (
+    <div className='flex h-full w-full'>
+      {adventure && storyArc && (
+        <SessionTab adventureSlug={adventure.adventureSlug} storyArcSlug={storyArc.storyArcSlug} />
+      )}
+    </div>
+  );
 
   return (
     <>
@@ -136,12 +141,11 @@ export default function ChapterDisplay({ params }: { params: { adventureSlug: st
                   <div className='flex h-full'>
                     <CustomTabs
                       tabs={[
-                        { id: 'tab-step', title: 'Step', content: tab1 },
+                        { id: 'tab-step', title: 'Step', content: stepTabContent },
                         {
                           id: 'tab-session',
                           title: 'Session',
-                          content: tab2,
-                          disabled: true,
+                          content: sessionTabContent,
                         },
                       ]}
                       color={MuiTabThemes.PRIMARY}
